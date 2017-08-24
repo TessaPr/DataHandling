@@ -1,21 +1,16 @@
 setwd("\\\\soliscom.uu.nl/uu/Users/Pronk008/My Documents/onderwijs/DataHandlingR")
 PD1 <- read.delim("PatientDATA1.txt", stringsAsFactors = FALSE )
 PD2 <- read.delim("PatientDATA2.txt", stringsAsFactors = FALSE )
-Pdata<-merge(PD1,PD2,by="PATNO",all=FALSE ) 
-Pdata$VISIT<-as.Date(Pdata$VISIT,format="%d-%m-%Y")
-Pdata$PATNO <-as.factor(Pdata$PATNO) 
-Pdata$AE <-as.factor(Pdata$AE)
-Pdata$DX <-as.factor(Pdata$DX) 
-Frepl<-grep("F",Pdata$GENDER)
-Pdata$GENDER[Frepl]<-"Female"
-codes<-c("Male","Female")
-D <- adist(Pdata$GENDER, codes)
-colnames(D) <- codes
-rownames(D) <- Pdata$GENDER
-i <- apply(D, 1, which.min)
-Pdata$GENDER<-codes[as.numeric(i)]
-replaceNA<-which(Pdata$HR<40)
-Pdata$HR[replaceNA]<-NA
+PD2$VISIT<-as.Date(PD2$VISIT,format="%d-%m-%Y")
+diff(PD2$VISIT)
+PD1$AE <-as.factor(PD1$AE)
+PD2$DX <-as.factor(PD2$DX) 
+Pdata<-merge(PD1,PD2,by="PATNO",all=FALSE )
+Pdata_random <- Pdata[sample(1:nrow(Pdata), 3, replace=FALSE),] 
+table(Pdata$AE)
+table(Pdata$AE,Pdata$GENDER)
+prop.table(table(Pdata$AE,Pdata$GENDER))
+Pdata[order(Pdata$HR),]
 sepcol<-strsplit(Pdata$SBP_DBP,"_")
 New<-matrix(unlist(sepcol), nrow = 7, ncol = 2, byrow=TRUE)
 colnames(New)<-c("SBP","DBP")
@@ -23,14 +18,25 @@ New <- apply(New,2,as.numeric)
 Pdatanew<-cbind(Pdata,New)
 Pdatanew<-Pdatanew[,!names(Pdatanew)=="SBP_DBP"]
 Pdatanew[,"diff"] <- Pdatanew$DBP-Pdatanew$SBP
-Pdatanew<-Pdatanew[order(Pdatanew$HR),]
-Pdatanew<-na.omit(Pdatanew)
-cols <- ifelse(Pdatanew$GENDER == "Male", "red","darkred")
-par(mfrow=c(1,2))
-x1<-barplot(Pdatanew$HR, col=cols,ylim=c(0,200),xlab="Patient number", ylab="Heart rate",names.arg=Pdatanew$PATNO) #change the shape to triangles
-points(Pdatanew$SBP~x1, col=cols, pch=15)
-points(Pdatanew$DBP~x1, col=cols, pch=16)
-legend(1, 210, c("Male", "Female"), col = c("red","darkred"), pch = c(15,15), cex=0.5)
-legend(0, 210, c("HR", "SBP","DBP"), col = "black", pch = c(15,11,10), cex=0.5)
-Pdatanew$GENDER<-as.factor(Pdatanew$GENDER)
-boxplot(Pdatanew$HR~Pdatanew$GENDER,col=c("darkred","red"),ylab="Heart rate")
+Frepl<-grep("F",Pdatanew$GENDER)
+Pdatanew$GENDER_CLEAN = Pdatanew$GENDER
+Pdatanew$GENDER_CLEAN[Frepl]<-"Female"
+codes<-c("Male","Female")
+D <- adist(Pdatanew$GENDER_CLEAN, codes)
+colnames(D) <- codes
+rownames(D) <- Pdatanew$GENDER
+i <- apply(D, 1, which.min)
+Pdatanew$GENDER_CLEAN<-codes[as.numeric(i)]
+replaceNA <- which(Pdatanew$HR<40)
+Pdatanew$HR_CLEAN <- Pdatanew$HR
+Pdatanew$HR_CLEAN[replaceNA] <- NA
+options(repr.plot.width=6, repr.plot.height=5)
+par(mar=c(1,1,1,1))
+plot(c(1:20),pch=1:20,col=1:20)
+Pdatanew<-Pdatanew[order(Pdatanew$HR_CLEAN),]
+Pdata_plot<-na.omit(Pdatanew)
+cols <- ifelse(Pdata_plot$GENDER_CLEAN == "Male", "red","darkred")
+x1 <- barplot(Pdata_plot$HR, col=cols, ylim=c(0,200),xlab="Patient number", ylab="Heart rate",names.arg=Pdata_plot$PATNO) 
+legend(0, 190, c("Male", "Female"), col = c("red","darkred"), pch = c(15,15))
+Pdata_plot$GENDER_CLEAN<-as.factor(Pdata_plot$GENDER_CLEAN)
+boxplot(Pdata_plot$HR~Pdata_plot$GENDER_CLEAN,col=c("darkred","red"),ylab="Heart rate")
